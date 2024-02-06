@@ -11,10 +11,10 @@ public class UserConfig {
     private String userName;
     private String sourceLanguage;
     private String targetLanguage;
-    private File homeDirectory;
+    private Path homeDirPath;
 
     public UserConfig(String userName) {
-        homeDirectory = GlobalConfig.getUsersDirectoryPath().resolve(userName).toFile();
+        homeDirPath = GlobalConfig.getUsersDirectoryPath().resolve(userName);
     }
 
     public boolean load(File config) {
@@ -71,5 +71,9 @@ public class UserConfig {
 
     public void setUserName(String userName) {
         this.userName = userName;
+    }
+
+    public Path getHomeDirPath() {
+        return homeDirPath;
     }
 }
