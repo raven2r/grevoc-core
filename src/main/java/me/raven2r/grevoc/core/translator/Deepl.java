@@ -11,7 +11,7 @@ public class Deepl implements Translates {
     private Translator translator = null;
     private String translatedText = "";
 
-    Deepl() {
+    public Deepl() {
         Properties properties = new Properties();
 
         try {
