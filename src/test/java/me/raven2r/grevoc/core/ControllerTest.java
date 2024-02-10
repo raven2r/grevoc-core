@@ -16,8 +16,15 @@ class ControllerTest {
         model.addCandidate("Hallo");
         model.addCandidate("Schule");
         model.addCandidate("Hotel");
-        model.addCandidate("Markt");
+        //model.addCandidate("Markt");
         model.translateCandidates();
+        model.printTranslations();
+        model.uploadTranslations();
+        model.printTranslations();
+        model.addCandidate("Hotel");
+        model.translateCandidates();
+        model.printTranslations();
+        model.uploadTranslations();
         model.printTranslations();
     }
 

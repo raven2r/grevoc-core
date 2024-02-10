@@ -9,7 +9,7 @@ public class GlobalConfig {
     private static final String defaultSourceLanguage = "de";
     private static final String defaultTargetLanguage = "ru";
     private static final String userConfigFileName = "config.properties";
-    private static final String userDatabaseFileName = "words.db";
+    private static final String userDatabaseFileName = "translations.db";
 
     public static Path getDataDirectoryPath() {
         return dataDirectory;
