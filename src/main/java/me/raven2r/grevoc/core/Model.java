@@ -252,6 +252,10 @@ public class Model {
             return String.join(" OR ", qcand);
         }
 
+        public Map<String, String> getTranslations() {
+            return (Map)translations.clone();
+        }
+
 
         public void printCandidatesCounter() {
             candidatesCounter.forEach( (k,v) -> System.out.println(k + "\t" + v));
