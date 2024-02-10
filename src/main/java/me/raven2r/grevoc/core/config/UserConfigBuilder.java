@@ -4,33 +4,33 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class UserConfigBuilder {
-    private Map<String, Boolean> initedFields = new HashMap<>();
+    private Map<String, Boolean> mandatoryFields = new HashMap<>();
     private UserConfig userConfig;
 
     public UserConfigBuilder() {
         userConfig = new UserConfig();
-        initedFields.put("userName", false);
-        initedFields.put("sourceLanguage", false);
-        initedFields.put("targetLanguage", false);
+        mandatoryFields.put("userName", false);
+        mandatoryFields.put("sourceLanguage", false);
+        mandatoryFields.put("targetLanguage", false);
     }
 
     public void setUserName(String name) {
         userConfig.setUserName(name);
-        initedFields.put("userName", true);
+        mandatoryFields.put("userName", true);
     }
 
     public void setSourceLanguage(String language) {
         userConfig.setSourceLanguage(language);
-        initedFields.put("sourceLanguage", true);
+        mandatoryFields.put("sourceLanguage", true);
     }
 
     public void setTargetLanguage(String language) {
         userConfig.setTargetLanguage(language);
-        initedFields.put("targetLanguage", true);
+        mandatoryFields.put("targetLanguage", true);
     }
 
     public UserConfig build() {
-        initedFields.forEach( (k, v) -> {
+        mandatoryFields.forEach( (k, v) -> {
            if(v == false)
                throw new RuntimeException(k + " is not initialized");
         });

@@ -55,6 +55,7 @@ class ControllerTest {
         model.loadAllDBTranslations();
         model.printTranslations();
         model.printCandidatesCounter();
+        model.translateCandidates();
     }
 
 

@@ -18,8 +18,7 @@ public class Model {
         private final String TARGET_FIELD_NAME = "target_language";
         private final String DATE_FIELD_NAME = "date";
 
-
-    // source field same as in main table
+        // source field is same as in main table
         private final String TABLE_STATS = "statistic";
         private final String COUNTER_FIELD_NAME = "counter";
 
@@ -31,7 +30,8 @@ public class Model {
         private Statement statement;
 
         private final ArrayList<String> candidates = new ArrayList<String>();
-        private final HashMap<String, Integer> candidatesCounter = new HashMap<>();
+        private final TreeMap<String, Integer> candidatesCounter = new TreeMap<>();
+        private final TreeMap<String, Integer> candidatesDBCounter = new TreeMap<>();
         private final TreeMap<String, String> translations = new TreeMap<>();
         private final HashSet<String> translated = new HashSet<>();
         private ResultSet existingTranslations;
