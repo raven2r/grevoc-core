@@ -13,8 +13,14 @@ public class UserConfig {
     private String targetLanguage;
     private Path homeDirPath;
 
-    public UserConfig(String un) {
-        setUserName(un);
+    // for larger config's builder
+    UserConfig() {
+    }
+
+    public UserConfig(String name, String sourceLanguage, String targetLanguage) {
+        setUserName(name);
+        setSourceLanguage(sourceLanguage);
+        setTargetLanguage(targetLanguage);
         homeDirPath = GlobalConfig.getUsersDirectoryPath().resolve(userName);
     }
 

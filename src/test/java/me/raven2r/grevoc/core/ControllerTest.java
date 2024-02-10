@@ -7,16 +7,14 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class ControllerTest {
     UserConfig userConfig;
+    Model model;
 
     @Test
     void scenarioOne() {
-
-
-        var model = new Model(userConfig);
         model.addCandidate("Hallo");
         model.addCandidate("Schule");
         model.addCandidate("Hotel");
-        //model.addCandidate("Markt");
+        model.addCandidate("Markt");
         model.translateCandidates();
         model.printTranslations();
         model.uploadTranslations();
@@ -30,8 +28,7 @@ class ControllerTest {
 
     @Test
     void scenarioTwo() {
-        initConfig();
-        var model = new Model(userConfig);
+        initModel();
         model.loadTranslationCandidates();
         model.translateCandidates();
         model.uploadTranslations();
@@ -39,12 +36,10 @@ class ControllerTest {
     }
 
     @Test
-    void translationUniq() {
-        initConfig();
-        var model = new Model(userConfig);
+    void getTranslationsTest() {
+        initModel();
         model.loadTranslationCandidates();
         model.translateCandidates();
-        model.uploadTranslations();
 
         var tr = model.getTranslations();
         tr.put("TEST", "TEST");
@@ -54,11 +49,18 @@ class ControllerTest {
             fail("Key added through clone");
     }
 
+    @Test
+    void loadAllDBTranslationsTest() {
+        initModel();
+        model.loadAllDBTranslations();
+        model.printTranslations();
+        model.printCandidatesCounter();
+    }
 
-    private void initConfig() {
-        userConfig = new UserConfig("user288");
-        userConfig.setSourceLanguage("de");
-        userConfig.setTargetLanguage("ru");
+
+    private void initModel() {
+        userConfig = new UserConfig("user288", "de", "ru");
+        model = new Model(userConfig);
     }
 
 }

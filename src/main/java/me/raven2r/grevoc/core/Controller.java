@@ -9,6 +9,5 @@ import java.util.ArrayList;
 
 public class Controller {
     public static void main(String[] args) {
-        var userConfig = new UserConfig(args[1]);
     }
 }

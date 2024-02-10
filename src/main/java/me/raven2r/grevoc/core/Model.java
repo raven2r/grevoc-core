@@ -32,7 +32,7 @@ public class Model {
 
         private final ArrayList<String> candidates = new ArrayList<String>();
         private final HashMap<String, Integer> candidatesCounter = new HashMap<>();
-        private final HashMap<String, String> translations = new HashMap<>();
+        private final TreeMap<String, String> translations = new TreeMap<>();
         private final HashSet<String> translated = new HashSet<>();
         private ResultSet existingTranslations;
 
@@ -157,39 +157,20 @@ public class Model {
             String sourceLanguage = userConfig.getSourceLanguage();
             String targetLanguage = userConfig.getTargetLanguage();
 
-            // Get words which already translated from database
-            try {
-                String query = "SELECT " + SOURCE_FIELD_NAME + "," + TARGET_FIELD_NAME
-                        + " FROM " + TABLE_TRANS
-                        + " WHERE " + craftSQLCandidatesQueryForWhere();
-
-                existingTranslations = statement.executeQuery(query);
-
-                do
-                 {
-                    translations.put(existingTranslations.getString(SOURCE_FIELD_NAME),
-                            existingTranslations.getString(TARGET_FIELD_NAME)
-                    );
-                    translated.add(existingTranslations.getString(SOURCE_FIELD_NAME));
-                }
-                while(existingTranslations.next());
-            }
-            catch(SQLException sqle) {
-                sqle.printStackTrace();
-            }
+            loadSimilarTranslationsFromDB();
 
             candidatesCounter.forEach( (k,v) -> {
                 String source = k;
                 String translation;
 
                 if(!translated.contains(source)) {
-                    translation = translator.translate(sourceLanguage, targetLanguage, source);
+                    translation = translator.translate(userConfig.getSourceLanguage(),
+                            userConfig.getTargetLanguage(), source);
                     translations.put(source, translation);
                 }
             });
         }
 
-        // add checks later
         public boolean uploadTranslations() {
             for(Iterator<Map.Entry<String, Integer>> entry = candidatesCounter.entrySet().iterator();
                 entry.hasNext();) {
@@ -245,7 +226,7 @@ public class Model {
             return true;
         }
 
-        public String craftSQLCandidatesQueryForWhere() {
+        public String joinCandidatesKeysForSQL() {
             ArrayList<String> qcand = new ArrayList<>();
             var i = 0;
             candidatesCounter.keySet().forEach( k -> qcand.add(SOURCE_FIELD_NAME + " = '" + k + "'"));
@@ -256,6 +237,52 @@ public class Model {
             return (Map)translations.clone();
         }
 
+        public boolean loadSimilarTranslationsFromDB() {
+            // Get words which already translated from database
+            try {
+                String query = "SELECT " + SOURCE_FIELD_NAME + "," + TARGET_FIELD_NAME
+                        + " FROM " + TABLE_TRANS
+                        + " WHERE " + joinCandidatesKeysForSQL();
+
+                existingTranslations = statement.executeQuery(query);
+
+                while(existingTranslations.next())
+                {
+                    translations.put(existingTranslations.getString(SOURCE_FIELD_NAME),
+                            existingTranslations.getString(TARGET_FIELD_NAME)
+                    );
+                    translated.add(existingTranslations.getString(SOURCE_FIELD_NAME));
+                }
+            }
+            catch(SQLException sqle) {
+                sqle.printStackTrace();
+            }
+
+            return true;
+        }
+
+        public boolean loadAllDBTranslations() {
+            try {
+                var query = "SELECT * FROM " + TABLE_TRANS;
+                existingTranslations = statement.executeQuery(query);
+
+                while(existingTranslations.next()) {
+                    translations.put(
+                            existingTranslations.getString(SOURCE_FIELD_NAME),
+                            existingTranslations.getString(TARGET_FIELD_NAME)
+                    );
+
+                    candidatesCounter.putIfAbsent(existingTranslations.getString(SOURCE_FIELD_NAME), 0);
+                    translated.add(existingTranslations.getString(SOURCE_FIELD_NAME));
+                }
+
+                return true;
+            }
+            catch (SQLException sqle) {
+                sqle.printStackTrace();
+                return false;
+            }
+        }
 
         public void printCandidatesCounter() {
             candidatesCounter.forEach( (k,v) -> System.out.println(k + "\t" + v));
