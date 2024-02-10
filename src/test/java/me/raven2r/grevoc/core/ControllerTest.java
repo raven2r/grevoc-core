@@ -29,6 +29,19 @@ class ControllerTest {
     }
 
     @Test
+    void scenarioTwo() {
+        var userConfig = new UserConfig("user288");
+        userConfig.setSourceLanguage("de");
+        userConfig.setTargetLanguage("ru");
+
+        var model = new Model(userConfig);
+        model.loadTranslationCandidates();
+        model.translateCandidates();
+        model.uploadTranslations();
+        model.printTranslations();
+    }
+
+    @Test
     void test() {
         var controller = new Controller();
         Controller.main(new String[]{"", "user1"});

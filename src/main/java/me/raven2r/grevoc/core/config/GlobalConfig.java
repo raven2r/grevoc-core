@@ -10,6 +10,7 @@ public class GlobalConfig {
     private static final String defaultTargetLanguage = "ru";
     private static final String userConfigFileName = "config.properties";
     private static final String userDatabaseFileName = "translations.db";
+    private static final String userTranslationCandidatesFileName = "candidates.txt";
 
     public static Path getDataDirectoryPath() {
         return dataDirectory;
@@ -37,5 +38,9 @@ public class GlobalConfig {
 
     public static String getUserDatabaseFileName() {
         return userDatabaseFileName;
+    }
+
+    public static String getUserTranslationCandidatesFileName() {
+        return userTranslationCandidatesFileName;
     }
 }

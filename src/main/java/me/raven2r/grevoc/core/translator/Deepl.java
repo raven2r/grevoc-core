@@ -6,21 +6,15 @@ import java.io.IOException;
 import java.util.Properties;
 
 public class Deepl implements Translates {
-    // make in external file
-    private String authKey = null;
+    private String apiKey = null;
     private Translator translator = null;
     private String translatedText = "";
+    private Properties parameters = new Properties();
+
 
     public Deepl() {
-        Properties properties = new Properties();
-
-        try {
-            properties.load(getClass().getClassLoader().getResourceAsStream("auth.properties"));
-            translator = new Translator(properties.getProperty("deepl.api.key"));
-        }
-        catch (IOException ioe) {
-            ioe.printStackTrace();
-        }
+        loadDefaultApiKey();
+        translator = new Translator(apiKey);
     }
 
     @Override
@@ -33,5 +27,23 @@ public class Deepl implements Translates {
         }
 
         return translatedText;
+    }
+
+    public boolean setAPIKey(String key) {
+        apiKey = key;
+        parameters.setProperty("deepl.api.key", key);
+        return true;
+    }
+
+    boolean loadDefaultApiKey() {
+        try {
+            parameters.load(getClass().getClassLoader().getResourceAsStream("auth.properties"));
+            apiKey = parameters.getProperty("deepl.api.key");
+        }
+        catch (IOException ioe) {
+            ioe.printStackTrace();
+        }
+
+        return true;
     }
 }

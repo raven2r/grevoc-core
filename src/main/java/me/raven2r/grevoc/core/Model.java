@@ -6,6 +6,8 @@ import me.raven2r.grevoc.core.translator.Deepl;
 import me.raven2r.grevoc.core.translator.Translates;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.*;
 import java.util.*;
@@ -14,12 +16,13 @@ public class Model {
         private final String TABLE_TRANS = "translations";
         private final String SOURCE_FIELD_NAME = "source_language";
         private final String TARGET_FIELD_NAME = "target_language";
+        private final String DATE_FIELD_NAME = "date";
 
-        // source field same as in main table
+
+    // source field same as in main table
         private final String TABLE_STATS = "statistic";
         private final String COUNTER_FIELD_NAME = "counter";
 
-        private final String DATE_FIELD_NAME = "date";
 
         private final UserConfig userConfig;
         private final String databaseURL;
@@ -49,7 +52,6 @@ public class Model {
             }
 
             makeTables();
-
             translator = new Deepl();
         }
 
@@ -109,6 +111,27 @@ public class Model {
             return true;
         }
 
+
+        public boolean loadTranslationCandidates() {
+            var candidatesFile = userConfig.getHomeDirPath()
+                    .resolve(GlobalConfig.getUserTranslationCandidatesFileName());
+
+            List<String> lines = null;
+            try {
+                lines = Files.readAllLines(candidatesFile);
+
+                if(lines.isEmpty())
+                    return false;
+
+                // add checks for number of words
+                lines.forEach(this::addCandidate);
+                return true;
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+                return false;
+            }
+        }
     /**
      * Add candidate
      *
