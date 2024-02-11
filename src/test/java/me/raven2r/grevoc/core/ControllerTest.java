@@ -29,7 +29,7 @@ class ControllerTest {
     @Test
     void scenarioTwo() {
         initModel();
-        model.loadTranslationCandidates();
+        model.loadTranslationCandidatesFile();
         model.translateCandidates();
         model.uploadTranslations();
         model.printTranslations();
@@ -38,7 +38,7 @@ class ControllerTest {
     @Test
     void getTranslationsTest() {
         initModel();
-        model.loadTranslationCandidates();
+        model.loadTranslationCandidatesFile();
         model.translateCandidates();
 
         var tr = model.getTranslations();

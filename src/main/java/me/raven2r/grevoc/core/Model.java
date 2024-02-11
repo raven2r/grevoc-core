@@ -1,10 +1,11 @@
 package me.raven2r.grevoc.core;
 
-import com.deepl.api.Translator;
 import me.raven2r.grevoc.core.config.GlobalConfig;
 import me.raven2r.grevoc.core.config.UserConfig;
 import me.raven2r.grevoc.core.translator.Deepl;
 import me.raven2r.grevoc.core.translator.Translates;
+import org.languagetool.JLanguageTool;
+import org.languagetool.Languages;
 
 import java.io.File;
 import java.io.IOException;
@@ -25,6 +26,8 @@ public class Model {
 
 
         private final UserConfig userConfig;
+        private final Path candidatesFile;
+        private JLanguageTool languageTool;
         private final String databaseURL;
         private final Translates translator;
         private Connection connection = null;
@@ -39,6 +42,10 @@ public class Model {
 
         public Model (UserConfig userConfig) {
             this.userConfig = userConfig;
+            candidatesFile = userConfig.getHomeDirPath()
+                                .resolve(GlobalConfig.getUserTranslationCandidatesFileName());
+            languageTool = new JLanguageTool(Languages.getLanguageForShortCode(userConfig.getSourceLanguage()));
+
             makeDirectoryConsistence();
 
             var dbPath = userConfig.getHomeDirPath().resolve(GlobalConfig.getUserDatabaseFileName());
@@ -51,6 +58,9 @@ public class Model {
             catch (SQLException sqle) {
                 sqle.printStackTrace();
             }
+
+            if(null == connection)
+                throw new RuntimeException("Couldn't connect to database");
 
             makeTables();
             translator = new Deepl();
@@ -113,7 +123,7 @@ public class Model {
         }
 
 
-        public boolean loadTranslationCandidates() {
+        public boolean loadTranslationCandidatesFile() {
             var candidatesFile = userConfig.getHomeDirPath()
                     .resolve(GlobalConfig.getUserTranslationCandidatesFileName());
 
@@ -133,6 +143,19 @@ public class Model {
                 return false;
             }
         }
+
+        public boolean deleteCandidatesFile() {
+            try {
+                Files.delete(candidatesFile);
+                return true;
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+                return false;
+            }
+        }
+
+
     /**
      * Add candidate
      *
@@ -140,8 +163,13 @@ public class Model {
      * @return true if candidate is new in this session, not in db
      */
         public boolean addCandidate(String candidate) {
-            // old
-            candidates.add(candidate);
+            try {
+                if(!languageTool.check(candidate).isEmpty())
+                    return false;
+            }
+            catch (IOException ioe) {
+                ioe.printStackTrace();
+            }
 
             // new
             if (!candidatesCounter.containsKey(candidate)) {
@@ -227,7 +255,7 @@ public class Model {
             return true;
         }
 
-        public String joinCandidatesKeysForSQL() {
+        private String joinCandidatesKeysForSQL() {
             ArrayList<String> qcand = new ArrayList<>();
             var i = 0;
             candidatesCounter.keySet().forEach( k -> qcand.add(SOURCE_FIELD_NAME + " = '" + k + "'"));
@@ -285,7 +313,7 @@ public class Model {
             }
         }
 
-        public TreeMap<String, String> getAllDBTranslations() {
+        public TreeMap<String, String> pullAllDBTranslations() {
             try {
                 TreeMap<String, String> translations = new TreeMap<>();
                 var query = "SELECT * FROM " + TABLE_TRANS;
@@ -304,11 +332,11 @@ public class Model {
             }
         }
 
-        public TreeMap<String, String> getRandomDBTranslations() {
-            return getRandomDBTranslations(0);
+        public TreeMap<String, String> pullRandomDBTranslations() {
+            return pullRandomDBTranslations(0);
         }
 
-        private TreeMap<String, String> getRandomDBTranslations(int limit) {
+        private TreeMap<String, String> pullRandomDBTranslations(int limit) {
             TreeMap<String, String> translations = new TreeMap<>();
             var query = "SELECT * FROM " + TABLE_TRANS + "ORDER BY RANDOM()";
 
@@ -327,6 +355,26 @@ public class Model {
                 }
 
                 return translations;
+            }
+            catch (SQLException sqle) {
+                sqle.printStackTrace();
+                return null;
+            }
+        }
+
+        public TreeMap<String, Integer> pullAllDBCounters() {
+            TreeMap<String, Integer> counters = new TreeMap<>();
+            var query = "SELECT * FROM " + TABLE_STATS;
+
+            try {
+                selectorResult = statement.executeQuery(query);
+
+                while(selectorResult.next()) {
+                    counters.put(selectorResult.getString(SOURCE_FIELD_NAME),
+                            selectorResult.getInt(COUNTER_FIELD_NAME));
+                }
+
+                return counters;
             }
             catch (SQLException sqle) {
                 sqle.printStackTrace();
