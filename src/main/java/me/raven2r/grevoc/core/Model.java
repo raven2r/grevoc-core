@@ -1,5 +1,6 @@
 package me.raven2r.grevoc.core;
 
+import com.deepl.api.Translator;
 import me.raven2r.grevoc.core.config.GlobalConfig;
 import me.raven2r.grevoc.core.config.UserConfig;
 import me.raven2r.grevoc.core.translator.Deepl;
@@ -34,7 +35,7 @@ public class Model {
         private final TreeMap<String, Integer> candidatesDBCounter = new TreeMap<>();
         private final TreeMap<String, String> translations = new TreeMap<>();
         private final HashSet<String> translated = new HashSet<>();
-        private ResultSet existingTranslations;
+        private ResultSet selectorResult;
 
         public Model (UserConfig userConfig) {
             this.userConfig = userConfig;
@@ -244,14 +245,14 @@ public class Model {
                         + " FROM " + TABLE_TRANS
                         + " WHERE " + joinCandidatesKeysForSQL();
 
-                existingTranslations = statement.executeQuery(query);
+                selectorResult = statement.executeQuery(query);
 
-                while(existingTranslations.next())
+                while(selectorResult.next())
                 {
-                    translations.put(existingTranslations.getString(SOURCE_FIELD_NAME),
-                            existingTranslations.getString(TARGET_FIELD_NAME)
+                    translations.put(selectorResult.getString(SOURCE_FIELD_NAME),
+                            selectorResult.getString(TARGET_FIELD_NAME)
                     );
-                    translated.add(existingTranslations.getString(SOURCE_FIELD_NAME));
+                    translated.add(selectorResult.getString(SOURCE_FIELD_NAME));
                 }
             }
             catch(SQLException sqle) {
@@ -264,16 +265,16 @@ public class Model {
         public boolean loadAllDBTranslations() {
             try {
                 var query = "SELECT * FROM " + TABLE_TRANS;
-                existingTranslations = statement.executeQuery(query);
+                selectorResult = statement.executeQuery(query);
 
-                while(existingTranslations.next()) {
+                while(selectorResult.next()) {
                     translations.put(
-                            existingTranslations.getString(SOURCE_FIELD_NAME),
-                            existingTranslations.getString(TARGET_FIELD_NAME)
+                            selectorResult.getString(SOURCE_FIELD_NAME),
+                            selectorResult.getString(TARGET_FIELD_NAME)
                     );
 
-                    candidatesCounter.putIfAbsent(existingTranslations.getString(SOURCE_FIELD_NAME), 0);
-                    translated.add(existingTranslations.getString(SOURCE_FIELD_NAME));
+                    candidatesCounter.putIfAbsent(selectorResult.getString(SOURCE_FIELD_NAME), 0);
+                    translated.add(selectorResult.getString(SOURCE_FIELD_NAME));
                 }
 
                 return true;
@@ -281,6 +282,55 @@ public class Model {
             catch (SQLException sqle) {
                 sqle.printStackTrace();
                 return false;
+            }
+        }
+
+        public TreeMap<String, String> getAllDBTranslations() {
+            try {
+                TreeMap<String, String> translations = new TreeMap<>();
+                var query = "SELECT * FROM " + TABLE_TRANS;
+                selectorResult = statement.executeQuery(query);
+
+                while(selectorResult.next()) {
+                    translations.put(selectorResult.getString(SOURCE_FIELD_NAME),
+                            selectorResult.getString(TARGET_FIELD_NAME));
+                }
+
+                return translations;
+            }
+            catch(SQLException sqle) {
+                sqle.printStackTrace();
+                return null;
+            }
+        }
+
+        public TreeMap<String, String> getRandomDBTranslations() {
+            return getRandomDBTranslations(0);
+        }
+
+        private TreeMap<String, String> getRandomDBTranslations(int limit) {
+            TreeMap<String, String> translations = new TreeMap<>();
+            var query = "SELECT * FROM " + TABLE_TRANS + "ORDER BY RANDOM()";
+
+            // if limit == 0 do nothing
+            if(limit < 0)
+                throw new RuntimeException("limit must be greater or equal to 0");
+            else if(limit > 0)
+                query += " LIMIT " + limit;
+
+            try {
+                selectorResult = statement.executeQuery(query);
+
+                while(selectorResult.next()) {
+                    translations.put(selectorResult.getString(SOURCE_FIELD_NAME),
+                            selectorResult.getString(TARGET_FIELD_NAME));
+                }
+
+                return translations;
+            }
+            catch (SQLException sqle) {
+                sqle.printStackTrace();
+                return null;
             }
         }
 
