@@ -4,9 +4,8 @@ import me.raven2r.grevoc.core.config.GlobalConfig;
 import me.raven2r.grevoc.core.config.UserConfig;
 import me.raven2r.grevoc.core.translator.Deepl;
 import me.raven2r.grevoc.core.translator.Translates;
-import org.languagetool.JLanguageTool;
-import org.languagetool.Languages;
 
+import javax.xml.transform.Source;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +26,6 @@ public class Model {
 
         private final UserConfig userConfig;
         private final Path candidatesFile;
-        private JLanguageTool languageTool;
         private final String databaseURL;
         private final Translates translator;
         private Connection connection = null;
@@ -40,11 +38,12 @@ public class Model {
         private final HashSet<String> translated = new HashSet<>();
         private ResultSet selectorResult;
 
+        private final ArrayList<Translation> dbTranslations = new ArrayList<>();
+
         public Model (UserConfig userConfig) {
             this.userConfig = userConfig;
             candidatesFile = userConfig.getHomeDirPath()
                                 .resolve(GlobalConfig.getUserTranslationCandidatesFileName());
-            languageTool = new JLanguageTool(Languages.getLanguageForShortCode(userConfig.getSourceLanguage()));
 
             makeDirectoryConsistence();
 
@@ -122,6 +121,61 @@ public class Model {
             return true;
         }
 
+        public boolean pullAllDBTranslations() {
+            String queryTrans = "SELECT * FROM " + TABLE_TRANS;
+            String queryStats;
+            String source;
+            TranslationBuilder translationBuilder;
+
+            try {
+                selectorResult = statement.executeQuery(queryTrans);
+                while(selectorResult.next()) {
+                    queryStats = "SELECT * FROM " + TABLE_STATS + " WHERE " + SOURCE_FIELD_NAME + " = ";
+                    source = selectorResult.getString(SOURCE_FIELD_NAME);
+
+                    translationBuilder = new TranslationBuilder()
+                            .source(source)
+                            .target(selectorResult.getString(TARGET_FIELD_NAME))
+                            .added(selectorResult.getLong(DATE_FIELD_NAME));
+
+                    queryStats += "'" + source + "'";
+                    ResultSet rs = connection.createStatement().executeQuery(queryStats);
+                    translationBuilder.counter(rs.getInt(COUNTER_FIELD_NAME));
+                    dbTranslations.add(translationBuilder.build());
+                }
+
+                return true;
+            }
+            catch(SQLException sqle) {
+                sqle.printStackTrace();
+                return false;
+            }
+        }
+
+        public void printPulledDBTranslations() {
+            if (dbTranslations.isEmpty()) {
+                System.out.println("No pulled translations");
+            }
+
+            dbTranslations.forEach(t -> System.out.println(t.getSource()
+                            + "\t" + t.getTarget()
+                            + "\t" + t.getCounter()
+                            + "\t" + t.getAdded()
+                    )
+            );
+        }
+
+        public boolean suspend() {
+            try{
+                connection.close();
+                return true;
+            }
+            catch(SQLException sqle) {
+                sqle.printStackTrace();
+                return false;
+            }
+        }
+
 
         public boolean loadTranslationCandidatesFile() {
             var candidatesFile = userConfig.getHomeDirPath()
@@ -163,14 +217,6 @@ public class Model {
      * @return true if candidate is new in this session, not in db
      */
         public boolean addCandidate(String candidate) {
-            try {
-                if(!languageTool.check(candidate).isEmpty())
-                    return false;
-            }
-            catch (IOException ioe) {
-                ioe.printStackTrace();
-            }
-
             // new
             if (!candidatesCounter.containsKey(candidate)) {
                 candidatesCounter.put(candidate, 1);
@@ -310,25 +356,6 @@ public class Model {
             catch (SQLException sqle) {
                 sqle.printStackTrace();
                 return false;
-            }
-        }
-
-        public TreeMap<String, String> pullAllDBTranslations() {
-            try {
-                TreeMap<String, String> translations = new TreeMap<>();
-                var query = "SELECT * FROM " + TABLE_TRANS;
-                selectorResult = statement.executeQuery(query);
-
-                while(selectorResult.next()) {
-                    translations.put(selectorResult.getString(SOURCE_FIELD_NAME),
-                            selectorResult.getString(TARGET_FIELD_NAME));
-                }
-
-                return translations;
-            }
-            catch(SQLException sqle) {
-                sqle.printStackTrace();
-                return null;
             }
         }
 

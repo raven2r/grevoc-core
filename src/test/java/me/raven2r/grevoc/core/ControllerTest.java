@@ -11,6 +11,7 @@ class ControllerTest {
 
     @Test
     void scenarioOne() {
+        initModel();
         model.addCandidate("Hallo");
         model.addCandidate("Schule");
         model.addCandidate("Hotel");
@@ -56,6 +57,14 @@ class ControllerTest {
         model.printTranslations();
         model.printCandidatesCounter();
         model.translateCandidates();
+    }
+
+    @Test
+    void pullAddDBTranslations() {
+        initModel();
+        model.pullAllDBTranslations();
+        model.printPulledDBTranslations();
+        model.suspend();
     }
 
 
