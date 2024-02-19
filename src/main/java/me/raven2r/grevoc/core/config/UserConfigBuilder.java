@@ -32,7 +32,7 @@ public class UserConfigBuilder {
     public UserConfig build() {
         mandatoryFields.forEach( (k, v) -> {
            if(!v)
-               throw new RuntimeException(k + " is not initialized");
+               throw new IllegalArgumentException(k + " is not initialized");
         });
 
         return userConfig;

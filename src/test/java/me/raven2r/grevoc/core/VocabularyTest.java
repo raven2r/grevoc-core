@@ -5,9 +5,9 @@ import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-class ControllerTest {
+class VocabularyTest {
     UserConfig userConfig;
-    Model model;
+    Vocabulary model;
 
     @Test
     void scenarioOne() {
@@ -18,28 +18,28 @@ class ControllerTest {
         model.addCandidate("Markt");
         model.translateCandidates();
         model.printTranslations();
-        model.uploadTranslations();
-        model.printTranslations();
+        model.printDBTranslations();
+        model.pushTranslations();
         model.addCandidate("Hotel");
         model.translateCandidates();
         model.printTranslations();
-        model.uploadTranslations();
-        model.printTranslations();
+        model.pushTranslations();
+        model.printDBTranslations();
     }
 
     @Test
     void scenarioTwo() {
         initModel();
-        model.loadTranslationCandidatesFile();
+        model.loadCandidatesFromFile();
         model.translateCandidates();
-        model.uploadTranslations();
+        model.pushTranslations();
         model.printTranslations();
     }
 
     @Test
     void getTranslationsTest() {
         initModel();
-        model.loadTranslationCandidatesFile();
+        model.loadCandidatesFromFile();
         model.translateCandidates();
 
         var tr = model.getTranslations();
@@ -53,24 +53,47 @@ class ControllerTest {
     @Test
     void loadAllDBTranslationsTest() {
         initModel();
-        model.loadAllDBTranslations();
+        model.printCandidates();
         model.printTranslations();
-        model.printCandidatesCounter();
+        model.printDBTranslations();
+        model.loadCandidatesFromFile();
+        model.printCandidates();
         model.translateCandidates();
+        model.printTranslations();
     }
 
     @Test
     void pullAddDBTranslations() {
         initModel();
         model.pullAllDBTranslations();
-        model.printPulledDBTranslations();
+        model.printDBTranslations();
         model.suspend();
     }
 
 
     private void initModel() {
         userConfig = new UserConfig("user288", "de", "ru");
-        model = new Model(userConfig);
+        model = new Vocabulary(userConfig);
+    }
+
+    @Test
+    public void testSingleTranslationPush() {
+        initModel();
+        model.addCandidate("Unity");
+        model.translateCandidates();
+        model.pushTranslations();
+        model.suspend();
+    }
+
+    @Test
+    public void testTwoTranslationPush() {
+        initModel();
+        model.addCandidate("Unity");
+        model.addCandidate("Unity");
+        model.addCandidate("Milch");
+        model.translateCandidates();
+        model.pushTranslations();
+        model.suspend();
     }
 
 }
