@@ -53,11 +53,12 @@ class VocabularyTest {
         model.loadCandidatesFromFile();
         model.translateCandidates();
 
-        var tr = model.getTranslations();
-        tr.put("TEST", "TEST");
+        var trs = model.getTranslations();
+        var tr = Translation.newSimple("source", "target");
+        trs.add(tr);
         model.printTranslations();
 
-        if(model.getTranslations().containsKey("TEST"))
+        if(model.getTranslations().contains(tr))
             fail("Key added through clone");
     }
 

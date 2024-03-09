@@ -1,7 +1,5 @@
 package me.raven2r.grevoc.core;
 
-import java.sql.SQLTransactionRollbackException;
-
 public class Translation implements Comparable<Translation>, Cloneable{
     String source;
     String target;
@@ -77,7 +75,7 @@ public class Translation implements Comparable<Translation>, Cloneable{
         return null;
     }
 
-    public static Translation simple(String source, String target) {
+    public static Translation newSimple(String source, String target) {
         return new Translation(source, target, 1, System.currentTimeMillis());
     }
 
