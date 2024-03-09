@@ -503,7 +503,7 @@ public class Vocabulary {
             ArrayList<Translation> translations = new ArrayList<>();
 
             // if limit == 0 do not modify query (select all)
-            var query = "SELECT * FROM " + TABLE_NAME + "ORDER BY RANDOM()";
+            var query = "SELECT * FROM " + TABLE_NAME + " ORDER BY RANDOM()";
             if(limit < 0)
                 throw new RuntimeException("limit must be greater or equal to 0");
             else if(limit > 0)

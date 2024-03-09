@@ -13,8 +13,13 @@ public class Deepl implements Translates {
 
 
     public Deepl() {
-        loadDefaultApiKey();
+        loadDefaultCredentials();
         translator = new Translator(apiKey);
+    }
+
+    public Deepl(String apiKey) {
+        this.apiKey = apiKey;
+        translator = new Translator(this.apiKey);
     }
 
     @Override
@@ -35,7 +40,7 @@ public class Deepl implements Translates {
         return true;
     }
 
-    boolean loadDefaultApiKey() {
+    boolean loadDefaultCredentials() {
         try {
             parameters.load(getClass().getClassLoader().getResourceAsStream("auth.properties"));
             apiKey = parameters.getProperty("deepl.api.key");

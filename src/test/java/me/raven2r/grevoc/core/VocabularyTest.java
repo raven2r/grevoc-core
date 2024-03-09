@@ -28,8 +28,19 @@ class VocabularyTest {
     }
 
     @Test
-    void scenarioTwo() {
+    void testLoadingFromFile() {
         initModel();
+        model.loadCandidatesFromFile();
+        model.translateCandidates();
+        model.pushTranslations();
+        model.printTranslations();
+    }
+
+    @Test
+    void testMultipleLoadingFromFile() {
+        initModel();
+        model.loadCandidatesFromFile();
+        model.loadCandidatesFromFile();
         model.loadCandidatesFromFile();
         model.translateCandidates();
         model.pushTranslations();
@@ -96,4 +107,12 @@ class VocabularyTest {
         model.suspend();
     }
 
+    @Test
+    void testRandomPulling() {
+        initModel();
+
+        model.pullRandomlyAllDBTranslations().forEach(t -> {
+            System.out.println(t.getSource());
+        });
+    }
 }
