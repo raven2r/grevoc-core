@@ -50,7 +50,7 @@ public class Vocabulary {
         }
 
         makeTable();
-        translator = new Deepl();
+        translator = Translates.byName(userConfig.getTranslatorName());
     }
 
     /**
@@ -94,7 +94,6 @@ public class Vocabulary {
                 + ")";
 
         try {
-            System.out.println(query);
             connection.createStatement().execute(query);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -110,10 +109,13 @@ public class Vocabulary {
      * @return true in case of successful database interaction, false otherwise
      */
     public boolean pullAllDBTranslations() {
-        String queryTrans = "SELECT * FROM " + TABLE_NAME;
-        String queryStats;
-        String source;
-        TranslationBuilder translationBuilder;
+        String queryTrans;
+
+        if(translations.isEmpty())
+            queryTrans = "SELECT * FROM " + TABLE_NAME;
+        else
+            queryTrans = "SELECT * FROM " + TABLE_NAME
+                    + " WHERE " + SOURCE_FIELD_NAME + " <> " + joinTranslationsInOrKeysForSQL();
 
         try {
             ResultSet resultSet = connection.createStatement().executeQuery(queryTrans);
@@ -156,7 +158,7 @@ public class Vocabulary {
     }
 
     public boolean loadCandidatesFromFile(Path candidatesPath) {
-        List<String> lines = null;
+        List<String> lines;
         try {
             lines = Files.readAllLines(candidatesPath);
 
@@ -192,11 +194,10 @@ public class Vocabulary {
     public boolean addCandidate(String candidate) {
         if (!candidates.keySet().contains(candidate)) {
             candidates.put(candidate, 1);
-            return true;
         } else {
             candidates.put(candidate, candidates.get(candidate) + 1);
-            return true;
         }
+        return true;
     }
 
     /**
@@ -351,7 +352,6 @@ public class Vocabulary {
                 + " WHERE " + SOURCE_FIELD_NAME + " = " + joinCandidatesInOrKeysForSQL();
 
         try {
-            System.out.println(query);
             ResultSet resultSet = connection.createStatement().executeQuery(query);
             while (resultSet.next())
                 dbTranslations.add(buildTranslationFromRow(resultSet));
@@ -423,6 +423,7 @@ public class Vocabulary {
         pullAllDBTranslations();
 
         try {
+            // insert if not exists
             if (null == getDBTranslationBySource(translation.getSource())) {
                 var query = "INSERT INTO " + TABLE_NAME + "("
                         + SOURCE_FIELD_NAME + ","
@@ -439,6 +440,7 @@ public class Vocabulary {
                 connection.createStatement().execute(query);
             }
             // REWRITE
+            // increase counter when already exists
             else {
                 var counterOld = getDBTranslationBySource(translation.getSource()).getCounter();
                 var queryUpdate = "UPDATE " + TABLE_NAME
@@ -480,13 +482,26 @@ public class Vocabulary {
 
     private String joinCandidatesInOrKeysForSQL() {
         ArrayList<String> qcand = new ArrayList<>();
-        var i = 0;
         candidates.forEach((k, v) -> qcand.add("'" + k + "'"));
         return String.join(" OR ", qcand);
     }
 
+    private String joinTranslationsInOrKeysForSQL() {
+        ArrayList<String> orQuery = new ArrayList<>();
+        translations.forEach(t -> orQuery.add("'" + t.getSource() + "'"));
+        return String.join(" OR ", orQuery);
+    }
+
     public ArrayList<Translation> getTranslations() {
         return (ArrayList<Translation>) translations.clone();
+    }
+
+    public ArrayList<Translation> getDBTranslations() {
+        return (ArrayList<Translation>) dbTranslations.clone();
+    }
+
+    public Map<String, Integer> getCandidates() {
+        return (Map<String, Integer>) new TreeMap<String, Integer>(candidates);
     }
 
     public ArrayList<Translation> pullRandomlyAllDBTranslations() {

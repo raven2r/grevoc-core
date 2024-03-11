@@ -20,11 +20,20 @@ public class UserConfigBuilder {
         return this;
     }
 
-    public void target(String language) {
+    public UserConfigBuilder target(String language) {
         userConfig.setTargetLanguage(language);
+        return this;
+    }
+
+    public UserConfigBuilder translator(String translatorName) {
+        userConfig.setTranslatorName(translatorName);
+        return this;
     }
 
     public UserConfig build() {
+        if(null == userConfig.getUserName())
+            throw new IllegalStateException("User name must be specified");
+
         return userConfig;
     }
 }

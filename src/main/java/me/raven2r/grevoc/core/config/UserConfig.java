@@ -8,9 +8,13 @@ import java.nio.file.Path;
 import java.util.Properties;
 
 public class UserConfig {
-    private String userName;
-    private String sourceLanguage;
-    private String targetLanguage;
+    private String userName = null;
+    private String sourceLanguage = "en";
+    private String targetLanguage = "es";
+
+    private String translatorName = "deepl";
+
+    // automatic
     private Path homeDirPath;
 
     // for larger config's builder
@@ -23,6 +27,7 @@ public class UserConfig {
         setTargetLanguage(targetLanguage);
         homeDirPath = GlobalConfig.getUsersDirectoryPath().resolve(userName);
     }
+
 
     public boolean load(File config) {
         Properties properties = new Properties();
@@ -82,5 +87,17 @@ public class UserConfig {
 
     public Path getHomeDirPath() {
         return homeDirPath;
+    }
+
+    public String getTranslatorName() {
+        return translatorName;
+    }
+
+    public void setTranslatorName(String translatorName) {
+        this.translatorName = translatorName;
+    }
+
+    public static UserConfigBuilder newBuilder() {
+        return new UserConfigBuilder();
     }
 }
