@@ -6,11 +6,13 @@ public class GlobalConfig {
     private static final Path rootDirectory = Path.of(System.getProperty("user.home"), ".grevoc");
     private static final Path usersDirectory = getRootDirectoryPath().resolve("users");
     private static final Path dataDirectory = getRootDirectoryPath().resolve("data");
-    private static final String defaultSourceLanguage = "de";
-    private static final String defaultTargetLanguage = "ru";
-    private static final String userConfigFileName = "config.properties";
-    private static final String userDatabaseFileName = "translations.db";
-    private static final String userTranslationCandidatesFileName = "candidates.txt";
+    public static final String DEFAULT_SOURCE_LANGUAGE = "de";
+    public static final String DEFAULT_TARGET_LANGUAGE = "ru";
+    public static final String DEFAULT_TRANSLATOR_NAME = "deepl";
+    public static final String USER_DATABASE_FILE_NAME = "translations.db";
+    public static final String USER_TRANSLATION_CANDIDATES_FILE_NAME = "candidates.txt";
+    public static final String USER_PASSWORD_HASH_FILE_NAME = "password.sha256sum";
+    public static final String USER_CONFIG_FILE_NAME = "config.properties";
 
     public static Path getDataDirectoryPath() {
         return dataDirectory;
@@ -24,23 +26,4 @@ public class GlobalConfig {
         return rootDirectory;
     }
 
-    public static String getDefaultSourceLanguage() {
-        return defaultSourceLanguage;
-    }
-
-    public static String getDefaultTargetLanguage() {
-        return defaultTargetLanguage;
-    }
-
-    public static String getUserConfigFileName() {
-        return userConfigFileName;
-    }
-
-    public static String getUserDatabaseFileName() {
-        return userDatabaseFileName;
-    }
-
-    public static String getUserTranslationCandidatesFileName() {
-        return userTranslationCandidatesFileName;
-    }
 }

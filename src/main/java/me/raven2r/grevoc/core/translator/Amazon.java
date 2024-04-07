@@ -16,8 +16,11 @@ public class Amazon implements  Translates {
 
     public Amazon() {
         loadDefaultCredentials();
+
+        // Region is required, replace suitable for your credentials
         client = AmazonTranslateClient.builder()
                 .withCredentials(credentialsProvider)
+                .withRegion(Regions.EU_NORTH_1)
                 .build();
     }
 

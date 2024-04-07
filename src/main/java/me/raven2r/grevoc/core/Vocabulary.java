@@ -30,19 +30,19 @@ public class Vocabulary {
     private final ArrayList<Translation> dbTranslations = new ArrayList<>();
 
     /**
-     * Model for communication with database
+     * Model for communication with SQLite database
      *
      * @param userConfig prepared user configuration
      */
     public Vocabulary(UserConfig userConfig) {
         this.userConfig = userConfig;
         candidatesFile = userConfig.getHomeDirPath()
-                .resolve(GlobalConfig.getUserTranslationCandidatesFileName());
+                .resolve(GlobalConfig.USER_TRANSLATION_CANDIDATES_FILE_NAME);
 
         makeDirectoryConsistence();
 
         try {
-            var dbPath = userConfig.getHomeDirPath().resolve(GlobalConfig.getUserDatabaseFileName());
+            var dbPath = userConfig.getHomeDirPath().resolve(GlobalConfig.USER_DATABASE_FILE_NAME);
             databaseURL = "jdbc:sqlite:" + dbPath.toAbsolutePath();
             connection = DriverManager.getConnection(databaseURL);
         } catch (SQLException sqle) {
@@ -59,12 +59,11 @@ public class Vocabulary {
      *
      * @return true if success
      */
-    private boolean makeDirectoryConsistence() {
+    public static boolean makeDirectoryConsistence() {
         ArrayList<Path> paths = new ArrayList<Path>();
         paths.add(GlobalConfig.getRootDirectoryPath());
         paths.add(GlobalConfig.getDataDirectoryPath());
         paths.add(GlobalConfig.getUsersDirectoryPath());
-        paths.add(GlobalConfig.getUsersDirectoryPath().resolve(userConfig.getUserName()));
 
         for (Path path : paths) {
             File directory = path.toFile();
@@ -93,8 +92,8 @@ public class Vocabulary {
                 + "PRIMARY KEY (" + SOURCE_FIELD_NAME + ")"
                 + ")";
 
-        try {
-            connection.createStatement().execute(query);
+        try(var statement = connection.createStatement()) {
+            statement.executeUpdate(query);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
             return false;
@@ -117,8 +116,8 @@ public class Vocabulary {
             queryTrans = "SELECT * FROM " + TABLE_NAME
                     + " WHERE " + SOURCE_FIELD_NAME + " <> " + joinTranslationsInOrKeysForSQL();
 
-        try {
-            ResultSet resultSet = connection.createStatement().executeQuery(queryTrans);
+        try(var statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(queryTrans);
 
             while (resultSet.next()) {
                 var translation = buildTranslationFromRow(resultSet);
@@ -154,7 +153,7 @@ public class Vocabulary {
 
     public boolean loadCandidatesFromFile() {
         return loadCandidatesFromFile(userConfig.getHomeDirPath()
-                .resolve(GlobalConfig.getUserTranslationCandidatesFileName()));
+                .resolve(GlobalConfig.USER_TRANSLATION_CANDIDATES_FILE_NAME));
     }
 
     public boolean loadCandidatesFromFile(Path candidatesPath) {
@@ -291,17 +290,22 @@ public class Vocabulary {
         return (null == getTranslationBySource(source));
     }
 
+    /** Checks if Database of database internal cache has specified translation
+     * by source
+     * @param source source text
+     * @return
+     */
     public boolean dbHasTranslation(String source) {
         if (null == dbTranslations.stream().filter(t -> t.getSource().equals(source))
                 .findAny().orElse(null))
             return true;
 
-        try {
+        try(var statement =  connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
                     + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
-            ResultSet resultSet = connection.createStatement().executeQuery(query);
+            int numberOfRows = statement.executeUpdate(query);
 
-            if (resultSet.next())
+            if (numberOfRows > 0)
                 return true;
             else
                 return false;
@@ -351,8 +355,8 @@ public class Vocabulary {
         var query = "SELECT * FROM " + TABLE_NAME
                 + " WHERE " + SOURCE_FIELD_NAME + " = " + joinCandidatesInOrKeysForSQL();
 
-        try {
-            ResultSet resultSet = connection.createStatement().executeQuery(query);
+        try(var statement = connection.createStatement()) {
+            ResultSet resultSet = statement.executeQuery(query);
             while (resultSet.next())
                 dbTranslations.add(buildTranslationFromRow(resultSet));
 
@@ -376,11 +380,11 @@ public class Vocabulary {
     }
 
     public Translation pullTranslationBySource(String source) {
-        try {
+        try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
                     + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
 
-            var resultSet = connection.createStatement().executeQuery(query);
+            var resultSet = statement.executeQuery(query);
             return buildTranslationFromRow(resultSet);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -389,11 +393,11 @@ public class Vocabulary {
     }
 
     public Translation pullTranslationByTarget(String target) {
-        try {
+        try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
                     + " WHERE " + TARGET_FIELD_NAME + " = '" + target + "'";
 
-            var resultSet = connection.createStatement().executeQuery(query);
+            var resultSet = statement.executeQuery(query);
             return buildTranslationFromRow(resultSet);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -402,11 +406,11 @@ public class Vocabulary {
     }
 
     public Translation pullTranslationByAdded(long added) {
-        try {
+        try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
                     + " WHERE " + ADDED_FIELD_NAME + " = " + added;
 
-            var resultSet = connection.createStatement().executeQuery(query);
+            var resultSet = statement.executeQuery(query);
             return buildTranslationFromRow(resultSet);
         } catch (SQLException sqle) {
             sqle.printStackTrace();
@@ -422,7 +426,7 @@ public class Vocabulary {
 
         pullAllDBTranslations();
 
-        try {
+        try(var statement = connection.createStatement()) {
             // insert if not exists
             if (null == getDBTranslationBySource(translation.getSource())) {
                 var query = "INSERT INTO " + TABLE_NAME + "("
@@ -437,7 +441,7 @@ public class Vocabulary {
                         + counter
                         + ")";
 
-                connection.createStatement().execute(query);
+                statement.executeUpdate(query);
             }
             // REWRITE
             // increase counter when already exists
@@ -447,16 +451,16 @@ public class Vocabulary {
                         + " SET " + COUNTER_FIELD_NAME + " = " + (counterOld + counter)
                         + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
 
-                connection.createStatement().execute(queryUpdate);
+                statement.executeUpdate(queryUpdate);
             }
         } catch (SQLException sqle) {
             if (sqle.getMessage().contains("UNIQUE constraint failed")) {
-                try {
+                try(var substatement = connection.createStatement()) {
                     var query = "SELECT " + COUNTER_FIELD_NAME
                             + " FROM " + TABLE_NAME
                             + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
 
-                    var resultSet = connection.createStatement().executeQuery(query);
+                    var resultSet = substatement.executeQuery(query);
 
                     if (resultSet.next()) {
                         var counterOld = resultSet.getInt(COUNTER_FIELD_NAME);
@@ -464,7 +468,7 @@ public class Vocabulary {
                                 + " SET " + COUNTER_FIELD_NAME + " = " + counterOld + counter
                                 + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
 
-                        connection.createStatement().execute(queryUpdate);
+                        substatement.executeUpdate(queryUpdate);
                     } else
                         return false;
                 } catch (SQLException sqleInner) {
@@ -514,12 +518,12 @@ public class Vocabulary {
         // if limit == 0 do not modify query (select all)
         var query = "SELECT * FROM " + TABLE_NAME + " ORDER BY RANDOM()";
         if (limit < 0)
-            throw new RuntimeException("limit must be greater or equal to 0");
+            throw new IllegalArgumentException("limit must be greater or equal to 0");
         else if (limit > 0)
             query += " LIMIT " + limit;
 
-        try {
-            var resultSet = connection.createStatement().executeQuery(query);
+        try(var statement = connection.createStatement()) {
+            var resultSet = statement.executeQuery(query);
 
             while (resultSet.next())
                 translations.add(buildTranslationFromRow(resultSet));
