@@ -50,7 +50,7 @@ public class Vocabulary {
         }
 
         makeTable();
-        translator = Translates.byName(userConfig.getTranslatorName());
+        translator = Translates.byName(userConfig.getMainTranslator());
     }
 
     /**

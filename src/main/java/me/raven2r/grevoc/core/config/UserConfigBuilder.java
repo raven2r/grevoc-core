@@ -1,18 +1,16 @@
 package me.raven2r.grevoc.core.config;
 
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 
 public class UserConfigBuilder {
     private UserConfig userConfig;
 
-    public UserConfigBuilder() {
-        userConfig = new UserConfig();
-    }
-
-    public UserConfigBuilder userName(String name) {
-        userConfig.setUserName(name);
-        return this;
+    public UserConfigBuilder(String username, String password) {
+        userConfig = new UserConfig(username, password);
+        userConfig.setUserName(username);
+        userConfig.setDefaults();
     }
 
     public UserConfigBuilder source(String language) {
@@ -26,7 +24,32 @@ public class UserConfigBuilder {
     }
 
     public UserConfigBuilder translator(String translatorName) {
-        userConfig.setTranslatorName(translatorName);
+        userConfig.setMainTranslator(translatorName);
+        return this;
+    }
+
+    public UserConfigBuilder deeplAPIKey(String key) {
+        userConfig.setDeeplAPIKey(key);
+        return this;
+    }
+
+    public UserConfigBuilder amazonAccessKey(String key) {
+        userConfig.setAmazonAccessKey(key);
+        return this;
+    }
+
+    public UserConfigBuilder amazonSecretKey(String key) {
+        userConfig.setAmazonSecretKey(key);
+        return this;
+    }
+
+    public UserConfigBuilder openaiAPIKey(String key) {
+        userConfig.setOpenaiKey(key);
+        return this;
+    }
+
+    public UserConfigBuilder mainTranslator(String name) {
+        userConfig.setMainTranslator(name);
         return this;
     }
 
