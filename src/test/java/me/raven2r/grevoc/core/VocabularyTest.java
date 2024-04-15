@@ -7,31 +7,31 @@ import org.junit.jupiter.api.Test;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class VocabularyTest {
     UserConfig userConfig;
-    Vocabulary model;
+    Vocabulary vocabulary;
 
     @Test
     void scenarioOne() {
         initVocabulary();
-        model.addCandidate("Hallo");
-        model.addCandidate("Schule");
-        model.addCandidate("Hotel");
-        model.addCandidate("Markt");
-        model.translateCandidates();
-        model.printTranslations();
-        model.printDBTranslations();
-        model.pushTranslations();
-        model.addCandidate("Hotel");
-        model.translateCandidates();
-        model.printTranslations();
-        model.pushTranslations();
-        model.printDBTranslations();
+        vocabulary.addCandidate("Hallo");
+        vocabulary.addCandidate("Schule");
+        vocabulary.addCandidate("Hotel");
+        vocabulary.addCandidate("Markt");
+        vocabulary.translateCandidates();
+        vocabulary.printTranslations();
+        vocabulary.printDBTranslations();
+        vocabulary.pushTranslations();
+        vocabulary.addCandidate("Hotel");
+        vocabulary.translateCandidates();
+        vocabulary.printTranslations();
+        vocabulary.pushTranslations();
+        vocabulary.printDBTranslations();
     }
 
     @Test
@@ -52,58 +52,107 @@ class VocabularyTest {
             ioException.printStackTrace();
         }
 
-        model.loadCandidatesFromFile();
-        model.translateCandidates();
-        model.pushTranslations();
-        model.printTranslations();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.translateCandidates();
+        vocabulary.pushTranslations();
+        vocabulary.printTranslations();
     }
 
     @Test
     void testMultipleLoadingFromFile() {
         initVocabulary();
-        model.loadCandidatesFromFile();
-        model.loadCandidatesFromFile();
-        model.loadCandidatesFromFile();
-        model.translateCandidates();
-        model.pushTranslations();
-        model.printTranslations();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.translateCandidates();
+        vocabulary.pushTranslations();
+        vocabulary.printTranslations();
     }
 
     @Test
     void getTranslationsTest() {
         initVocabulary();
-        model.loadCandidatesFromFile();
-        model.translateCandidates();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.translateCandidates();
 
-        var trs = model.getTranslations();
+        var trs = vocabulary.getTranslations();
         var tr = Translation.newSimple("source", "target");
         trs.add(tr);
-        model.printTranslations();
+        vocabulary.printTranslations();
 
-        if(model.getTranslations().contains(tr))
+        if(vocabulary.getTranslations().contains(tr))
             fail("Key added through clone");
     }
 
     @Test
     void loadAllDBTranslationsTest() {
         initVocabulary();
-        model.printCandidates();
-        model.printTranslations();
-        model.printDBTranslations();
-        model.loadCandidatesFromFile();
-        model.printCandidates();
-        model.translateCandidates();
-        model.printTranslations();
+        vocabulary.printCandidates();
+        vocabulary.printTranslations();
+        vocabulary.printDBTranslations();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.printCandidates();
+        vocabulary.translateCandidates();
+        vocabulary.printTranslations();
     }
 
     @Test
     void pullAddDBTranslations() {
         initVocabulary();
-        model.pullAllDBTranslations();
-        model.printDBTranslations();
-        model.suspend();
+        vocabulary.pullAllDBTranslations();
+        vocabulary.printDBTranslations();
+        vocabulary.suspend();
     }
 
+
+    @Test
+    public void testSingleTranslationPush() {
+        initVocabulary();
+        vocabulary.addCandidate("Unity");
+        vocabulary.translateCandidates();
+        vocabulary.pushTranslations();
+        vocabulary.suspend();
+    }
+
+    @Test
+    public void testMultipleTranslationsPush() {
+        initVocabulary();
+        vocabulary.addCandidate("Unity");
+        vocabulary.addCandidate("Unity");
+        vocabulary.addCandidate("Milch");
+        vocabulary.addCandidate("Milch");
+        vocabulary.addCandidate("Milch");
+        vocabulary.translateCandidates();
+        vocabulary.pushTranslations();
+        vocabulary.suspend();
+    }
+
+    @Test
+    public void multipleFilesCandidatesLoadTest() {
+        initVocabulary();
+        vocabulary.loadCandidatesFromFile();
+        Map candidatesFirst = vocabulary.getCandidates();
+
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.loadCandidatesFromFile();
+        vocabulary.loadCandidatesFromFile();
+        Map candidatesSecond = vocabulary.getCandidates();
+
+        candidatesFirst.forEach( (k, v) -> System.out.println(k + ":" + v));
+        System.out.println("Second:");
+        candidatesSecond.forEach( (k, v) -> System.out.println(k + ":" + v));
+    }
+
+    @Test
+    void testRandomPulling() {
+        initVocabulary();
+
+        vocabulary.pullRandomlyAllDBTranslations().forEach(t -> {
+            System.out.println(t.getSource());
+        });
+
+        vocabulary.suspend();
+    }
 
     private void initVocabulary() {
         String username = "user228";
@@ -117,37 +166,6 @@ class VocabularyTest {
         userConfig.setSourceLanguage("de");
         userConfig.setTargetLanguage("ru");
 
-        model = new Vocabulary(userConfig);
-    }
-
-    @Test
-    public void testSingleTranslationPush() {
-        initVocabulary();
-        model.addCandidate("Unity");
-        model.translateCandidates();
-        model.pushTranslations();
-        model.suspend();
-    }
-
-    @Test
-    public void testMultipleTranslationsPush() {
-        initVocabulary();
-        model.addCandidate("Unity");
-        model.addCandidate("Unity");
-        model.addCandidate("Milch");
-        model.addCandidate("Milch");
-        model.addCandidate("Milch");
-        model.translateCandidates();
-        model.pushTranslations();
-        model.suspend();
-    }
-
-    @Test
-    void testRandomPulling() {
-        initVocabulary();
-
-        model.pullRandomlyAllDBTranslations().forEach(t -> {
-            System.out.println(t.getSource());
-        });
+        vocabulary = new Vocabulary(userConfig);
     }
 }

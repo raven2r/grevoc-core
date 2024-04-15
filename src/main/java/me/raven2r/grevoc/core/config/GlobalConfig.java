@@ -13,6 +13,7 @@ public class GlobalConfig {
     public static final String USER_TRANSLATION_CANDIDATES_FILE_NAME = "candidates.txt";
     public static final String USER_PASSWORD_HASH_FILE_NAME = "password.sha256sum";
     public static final String USER_CONFIG_FILE_NAME = "config.properties";
+    public static final String USER_CANDIDATES_MD5_FILE_NAME = "candidates.md5sums";
 
     public static Path getDataDirectoryPath() {
         return dataDirectory;

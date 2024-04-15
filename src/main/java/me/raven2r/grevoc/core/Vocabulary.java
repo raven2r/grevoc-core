@@ -1,5 +1,6 @@
 package me.raven2r.grevoc.core;
 
+import com.google.protobuf.Message;
 import me.raven2r.grevoc.core.config.GlobalConfig;
 import me.raven2r.grevoc.core.config.UserConfig;
 import me.raven2r.grevoc.core.translator.Deepl;
@@ -8,7 +9,12 @@ import me.raven2r.grevoc.core.translator.Translates;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.OpenOption;
 import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import javax.xml.bind.DatatypeConverter;
 import java.sql.*;
 import java.util.*;
 
@@ -159,6 +165,20 @@ public class Vocabulary {
     public boolean loadCandidatesFromFile(Path candidatesPath) {
         List<String> lines;
         try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(Files.readAllBytes(candidatesPath));
+            String md5sum = DatatypeConverter.printHexBinary(md.digest());
+
+            var md5sumsPath = userConfig.getHomeDirPath().resolve(GlobalConfig.USER_CANDIDATES_MD5_FILE_NAME);
+
+            if(md5sumsPath.toFile().exists()) {
+                var md5sums = Files.readAllLines(md5sumsPath);
+                if (md5sums.contains(md5sum))
+                    return false;
+            }
+            else
+                md5sumsPath.toFile().createNewFile();
+
             lines = Files.readAllLines(candidatesPath);
 
             if (lines.isEmpty())
@@ -166,10 +186,14 @@ public class Vocabulary {
 
             // add checks for number of words
             lines.forEach(this::addCandidate);
+            Files.writeString(md5sumsPath, md5sum + "\n", StandardOpenOption.APPEND);
+
             return true;
         } catch (IOException ioe) {
             ioe.printStackTrace();
             return false;
+        } catch (NoSuchAlgorithmException e) {
+            throw new RuntimeException(e);
         }
     }
 

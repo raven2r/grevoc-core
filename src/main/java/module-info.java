@@ -3,6 +3,8 @@ module me.raven2r.grevoc {
     requires java.sql;
     requires aws.java.sdk.translate;
     requires aws.java.sdk.core;
+    requires protobuf.java;
+    requires java.xml.bind;
     // for JavaDoc
     //requires org.junit.jupiter.api;
 
