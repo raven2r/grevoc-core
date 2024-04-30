@@ -129,7 +129,10 @@ public class UserConfig {
     }
 
     public boolean export() {
-        Path userFilePath = getHomeDirPath().resolve("config.properties");
+        return export(getHomeDirPath().resolve(GlobalConfig.USER_CONFIG_FILE_NAME));
+    }
+
+    public boolean export(final Path userFilePath) {
         var properties = new Properties();
         properties.setProperty("deepl.api.key", deeplAPIKey);
         properties.setProperty("amazon.access.key", amazonAccessKey);

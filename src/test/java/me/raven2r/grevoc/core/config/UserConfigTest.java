@@ -8,6 +8,13 @@ class UserConfigTest {
     @Test
     public void loadExportText() {
         var config = makeBlobUserConfig();
+
+        config.setMainTranslator("deepl");
+        config.setDeeplAPIKey("test-deepl-api-key");
+        config.setAmazonAccessKey("test-amazon-access-key");
+        config.setAmazonSecretKey("test-amazon-secret-key");
+        config.setOpenaiKey("test-openai-secret-key");
+        
         String deeplAPIKey = config.getDeeplAPIKey();
         String username = config.getUserName();
         String amazonAccessKey = config.getAmazonAccessKey();
@@ -15,9 +22,25 @@ class UserConfigTest {
         String openaiAPIKey = config.getOpenaiAPIKey();
 
         config.export();
+
+
+        String blobValue = "blob";
+
+        config.setMainTranslator("openai");
+        config.setDeeplAPIKey(blobValue);
+        config.setAmazonAccessKey(blobValue);
+        config.setAmazonSecretKey(blobValue);
+        config.setOpenaiKey(blobValue);
+        
         config.load();
 
-        assertEquals(deeplAPIKey, config.getDeeplAPIKey());
+
+        assertNotEquals("openai", config.getMainTranslator());
+        assertNotEquals(blobValue, config.getDeeplAPIKey());
+        assertNotEquals(blobValue, config.getAmazonAccessKey());
+        assertNotEquals(blobValue, config.getAmazonSecretKey());
+        assertNotEquals(blobValue, config.getOpenaiAPIKey());
+
     }
 
     private UserConfig makeBlobUserConfig() {

@@ -27,4 +27,9 @@ public class GlobalConfig {
         return rootDirectory;
     }
 
+    // Prevent initialization -- only constants are defined
+    private GlobalConfig() {
+    }
+
+
 }

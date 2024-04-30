@@ -94,6 +94,7 @@ class VocabularyTest {
         vocabulary.printCandidates();
         vocabulary.translateCandidates();
         vocabulary.printTranslations();
+        vocabulary.suspend();
     }
 
     @Test
