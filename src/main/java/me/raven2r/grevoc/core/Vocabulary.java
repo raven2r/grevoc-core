@@ -1,15 +1,12 @@
 package me.raven2r.grevoc.core;
 
-import com.google.protobuf.Message;
 import me.raven2r.grevoc.core.config.GlobalConfig;
 import me.raven2r.grevoc.core.config.UserConfig;
-import me.raven2r.grevoc.core.translator.Deepl;
 import me.raven2r.grevoc.core.translator.Translates;
 
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.OpenOption;
 import java.nio.file.Path;
 import java.nio.file.StandardOpenOption;
 import java.security.MessageDigest;
@@ -18,6 +15,8 @@ import javax.xml.bind.DatatypeConverter;
 import java.sql.*;
 import java.util.*;
 
+
+/** Vocabulary class interacts with SQLite database */
 public class Vocabulary {
     private final String TABLE_NAME = "translations";
     private final String SOURCE_FIELD_NAME = "source_language";
@@ -25,20 +24,24 @@ public class Vocabulary {
     private final String ADDED_FIELD_NAME = "added";
     private final String COUNTER_FIELD_NAME = "counter";
 
+    /** User configuration */
     private final UserConfig userConfig;
     private final Path candidatesFile;
     private final String databaseURL;
     private Translates translator;
     private final Connection connection;
 
+    /** Candidates map for translations */
     private final Map<String, Integer> candidates = new TreeMap<>();
+    /** List representing translations in local memory */
     private final ArrayList<Translation> translations = new ArrayList<>();
+    /** List representing translations in db */
     private final ArrayList<Translation> dbTranslations = new ArrayList<>();
 
     /**
-     * Model for communication with SQLite database
+     * Constructs Vocabulary with user configuration
      *
-     * @param userConfig prepared user configuration
+     * @param userConfig user configuration
      */
     public Vocabulary(UserConfig userConfig) {
         this.userConfig = userConfig;
@@ -61,7 +64,7 @@ public class Vocabulary {
 
     /**
      * Make directory consistence
-     * tries to check and fix directory structure
+     * tries to check and fix directory structure if needed
      *
      * @return true if success
      */
@@ -71,6 +74,7 @@ public class Vocabulary {
         paths.add(GlobalConfig.getDataDirectoryPath());
         paths.add(GlobalConfig.getUsersDirectoryPath());
 
+        // Add create directories which doesn't exist
         for (Path path : paths) {
             File directory = path.toFile();
 
@@ -110,6 +114,7 @@ public class Vocabulary {
 
     /**
      * Pull all database translations
+     * means to get all db entries into local memory
      *
      * @return true in case of successful database interaction, false otherwise
      */
@@ -156,12 +161,14 @@ public class Vocabulary {
         }
     }
 
-
+    /** Loads translation candidates from default file, which name is specified in GlobalConfig and location
+     * in UserConfig */
     public boolean loadCandidatesFromFile() {
         return loadCandidatesFromFile(userConfig.getHomeDirPath()
                 .resolve(GlobalConfig.USER_TRANSLATION_CANDIDATES_FILE_NAME));
     }
 
+    /** Loads translation candidates from specified file */
     public boolean loadCandidatesFromFile(Path candidatesPath) {
         List<String> lines;
         try {
@@ -197,6 +204,7 @@ public class Vocabulary {
         }
     }
 
+    /** Deletes default file with translatoin candidates */
     public boolean deleteCandidatesFile() {
         try {
             Files.delete(candidatesFile);
@@ -224,21 +232,27 @@ public class Vocabulary {
     }
 
     /**
-     * Add translation to translations list
+     * Add Translation to local translations list
      *
      * @param translation
      * @return true on success
      */
     public boolean addTranslation(Translation translation) {
-        return _addTranslation(translation, translations);
+        return addTranslation(translation, translations);
     }
 
+    /**
+     * Add translation to db translations list
+     * @param translation
+     * @return
+     */
     public boolean addDBTranslation(Translation translation) {
-        return _addTranslation(translation, dbTranslations);
+        return addTranslation(translation, dbTranslations);
     }
 
-    public boolean _addTranslation(Translation translation, ArrayList<Translation> to) {
-        if (null == _getTranslationBySource(translation.getSource(), to)) {
+    /** Add Translation to specified translations list */
+     public boolean addTranslation(Translation translation, ArrayList<Translation> to) {
+        if (null == getTranslationBySource(translation.getSource(), to)) {
             to.add(translation);
             return true;
         }
@@ -246,45 +260,57 @@ public class Vocabulary {
         return false;
     }
 
+
     public Translation getTranslationBySource(String source) {
-        return _getTranslationBySource(source, translations);
+        return getTranslationBySource(source, translations);
     }
 
     public Translation getTranslationByTarget(String target) {
-        return _getTranslationByTarget(target, translations);
+        return getTranslationByTarget(target, translations);
     }
 
     public Translation getTranslationByAdded(Long added) {
-        return _getTranslationByAdded(added, translations);
+        return getTranslationByAdded(added, translations);
     }
 
     public Translation getDBTranslationBySource(String source) {
-        return _getTranslationBySource(source, dbTranslations);
+        return getTranslationBySource(source, dbTranslations);
     }
 
     public Translation getDBTranslationByTarget(String target) {
-        return _getTranslationByTarget(target, dbTranslations);
+        return getTranslationByTarget(target, dbTranslations);
     }
 
     public Translation getDBTranslationByAdded(long added) {
-        return _getTranslationByAdded(added, dbTranslations);
+        return getTranslationByAdded(added, dbTranslations);
     }
 
-    private Translation _getTranslationBySource(String source, ArrayList<Translation> from) {
+    private Translation getTranslationBySource(String source, ArrayList<Translation> from) {
         return from.stream()
                 .filter(t -> t.getSource().equals(source)).findFirst().orElse(null);
     }
 
-    private Translation _getTranslationByTarget(String target, ArrayList<Translation> from) {
+    private Translation getTranslationByTarget(String target, ArrayList<Translation> from) {
         return from.stream()
                 .filter(t -> t.getTarget().equals(target)).findFirst().orElse(null);
     }
 
-    private Translation _getTranslationByAdded(long added, ArrayList<Translation> from) {
+    /**
+     * Get Translation by epoch date of addition
+     * @param added
+     * @param from
+     * @return
+     */
+    private Translation getTranslationByAdded(long added, ArrayList<Translation> from) {
         return from.stream()
                 .filter(t -> t.getAdded() == added).findFirst().orElse(null);
     }
 
+    /**
+     * Constructs Translation from first row of given ResultSet
+     * @param resultSet
+     * @return
+     */
     public Translation buildTranslationFromRow(ResultSet resultSet) {
         try {
             if (resultSet.isAfterLast())
@@ -303,6 +329,11 @@ public class Vocabulary {
         }
     }
 
+    /**
+     * Checks if candidates Map has candidate started with given word
+     * @param candidate
+     * @return
+     */
     public boolean hasCandidate(String candidate) {
         if (candidates.keySet().contains(candidate))
             return true;
@@ -339,6 +370,9 @@ public class Vocabulary {
         }
     }
 
+    /**
+     * Translates all candidates, appends local translations list, cleans candidates map
+     */
     public void translateCandidates() {
         if (candidates.isEmpty())
             return;
@@ -375,6 +409,10 @@ public class Vocabulary {
         }
     }
 
+    /**
+     * Loads to database translations representation translations with source similar to candidates
+     * @return
+     */
     public boolean pullDBSimilarTranslationsAsCandidates() {
         var query = "SELECT * FROM " + TABLE_NAME
                 + " WHERE " + SOURCE_FIELD_NAME + " = " + joinCandidatesInOrKeysForSQL();
@@ -391,18 +429,27 @@ public class Vocabulary {
         }
     }
 
+    /**
+     * Uploads local translations to database file and local list
+     * @return
+     */
     public boolean pushTranslations() {
         for (Iterator<Translation> entry = translations.iterator();
              entry.hasNext(); ) {
             var e = entry.next();
             pushTranslation(e);
             dbTranslations.add(e);
-            //translations.remove(e);
+            translations.remove(e);
         }
 
         return true;
     }
 
+    /** Loads Translation from database by specified source field
+     *
+     * @param source
+     * @return
+     */
     public Translation pullTranslationBySource(String source) {
         try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
@@ -416,6 +463,7 @@ public class Vocabulary {
         }
     }
 
+    /** Loads Translation from database by target field */
     public Translation pullTranslationByTarget(String target) {
         try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
@@ -429,6 +477,7 @@ public class Vocabulary {
         }
     }
 
+    /** Loads Translation from database by added epoch time */
     public Translation pullTranslationByAdded(long added) {
         try(var statement = connection.createStatement()) {
             var query = "SELECT * FROM " + TABLE_NAME
@@ -442,6 +491,11 @@ public class Vocabulary {
         }
     }
 
+    /**
+     * Uploads single translation to database and local list
+     * @param translation
+     * @return
+     */
     private boolean pushTranslation(Translation translation) {
         var source = translation.getSource();
         var target = translation.getTarget();
@@ -466,6 +520,7 @@ public class Vocabulary {
                         + ")";
 
                 statement.executeUpdate(query);
+                dbTranslations.add(translation);
             }
             // REWRITE
             // increase counter when already exists
@@ -476,6 +531,7 @@ public class Vocabulary {
                         + " WHERE " + SOURCE_FIELD_NAME + " = '" + source + "'";
 
                 statement.executeUpdate(queryUpdate);
+                getDBTranslationBySource(translation.getSource()).increaseCounter();
             }
         } catch (SQLException sqle) {
             if (sqle.getMessage().contains("UNIQUE constraint failed")) {
